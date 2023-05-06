@@ -55,6 +55,21 @@ server.on('sessionError', (err, session) => console.log('on: sessionError' /* , 
 server.on('timeout', () => console.log('on: timeout'));
 server.on('checkContinue', (req, res) => console.log('on: checkContinue'/* , req, res */));
 server.on('unknownProtocol', (socket) => console.log('on: unknownProtocol'));
+
+// server.setTimeout(500);
+
+server.on('session', (session) => {
+  ['close', 'connect', 'error', 'frameError', 'goaway', 'localSettings', 'ping', 'remoteSettings', 'stream', 'timeout'].forEach((eventName) => {
+    session.on(eventName, () => console.log(`session (${session.socket?.localAddress} ${session.socket?.localPort} ${session.socket?.localFamily} - ${session.socket?.remoteAddress} ${session.socket?.remotePort} ${session.socket?.remoteFamily}) on: ${eventName}`));
+  });
+});
+
+server.on('stream', (stream) => {
+  ['aborted', 'close', 'error', 'frameError', 'ready', 'timeout', 'trailers', 'wantTrailers'].forEach((eventName) => {
+    stream.on(eventName, () => console.log(`stream (${stream.id}) on: ${eventName}`));
+  });
+});
+
 // the 'stream' callback is called when a new
 // stream is created. Or in other words, every time a
 // new request is received
