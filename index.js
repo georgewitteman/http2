@@ -79,36 +79,26 @@ server.on('stream', (stream, headers, flags, rawHeaders) => {
   console.log("on: stream", /* stream, headers, flags, rawHeaders */);
   // we can use the `respond` method to send
   // any headers. Here, we send the status pseudo header
-  stream.on('wantTrailers', () => {
-    console.log("on: wantTrailers", stream.sentTrailers);
-    stream.sendTrailers({
-      'server-timing': 'miss, db;dur=53, app;dur=47.2, cache;desc="Cache Read";dur=23.2'
-    });
-    console.log("on: wantTrailers", stream.sentTrailers);
-  });
   stream.respond({
     HTTP2_HEADER_STATUS: 200,
     'content-type': 'text/html',
-    'Trailer': 'Server-Timing',
-    'TE': 'trailers',
-  }, { waitForTrailers: true })
+      'server-timing': 'miss, db;dur=53, app;dur=47.234, cache;desc="Cache Read";dur=23.2'
+  })
   if (headers[':path'] === '/foo') {
     stream.write("<!doctype html><head><title>two</title></head><body>Blah blah blah<br><br>\n","utf8", () => {
       stream.write("<br>write2<br><a href=\"/\">link to home</a>\n");
       setTimeout(() => {
         stream.write("My first server two!!</body></html>\n");
-        stream.end('blah')
+        stream.end()
       }, 500);
     });
     return
   }
-  stream.write("<!doctype html><head><title>hi</title></head><body>Blah blah blah<br><br>\n","utf8", () => {
-    stream.write("<br>write2<br><a href=\"/foo\">link to foo</a>\n");
-    setTimeout(() => {
-      stream.end("My first server!</body></html>\n");
-    }, 3000
-    )
-  });
+  stream.write("<!doctype html><head><title>hi</title></head><body><header>Blah blah blah<br><br>\n","utf8");
+  stream.write("<br>write2<br><a href=\"/foo\">link to foo</a></header>\n");
+  setTimeout(() => {
+    stream.end("My first server!</body></html>\n");
+  }, 3000);
 
   // // response streams are also stream objects, so we can
   // // use `write` to send data, and `end` once we're done
