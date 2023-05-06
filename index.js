@@ -33,7 +33,7 @@ const server = http2.createSecureServer({
   // we can read the certificate and private key from
   // our project directory
   key: fs.readFileSync('key.pem'),
-  cert: fs.readFileSync('cert.pem')
+  cert: fs.readFileSync('cert.pem'),
 })
 
 server.on("newListener", (eventName, listener) => console.log("on: eventName", eventName));
@@ -58,17 +58,19 @@ server.on('unknownProtocol', (socket) => console.log('on: unknownProtocol'));
 
 // server.setTimeout(500);
 
-server.on('session', (session) => {
-  ['close', 'connect', 'error', 'frameError', 'goaway', 'localSettings', 'ping', 'remoteSettings', 'stream', 'timeout'].forEach((eventName) => {
-    session.on(eventName, () => console.log(`session (${session.socket?.localAddress} ${session.socket?.localPort} ${session.socket?.localFamily} - ${session.socket?.remoteAddress} ${session.socket?.remotePort} ${session.socket?.remoteFamily}) on: ${eventName}`));
-  });
-});
+// server.on('session', (session) => {
+//   ['close', 'connect', 'error', 'frameError', 'goaway', 'localSettings', 'ping', 'remoteSettings', 'stream', 'timeout'].forEach((eventName) => {
+//     session.on(eventName, () => console.log(`session (${session.socket?.localAddress} ${session.socket?.localPort} ${session.socket?.localFamily} - ${session.socket?.remoteAddress} ${session.socket?.remotePort} ${session.socket?.remoteFamily}) on: ${eventName}`));
+//   });
+// });
 
-server.on('stream', (stream) => {
-  ['aborted', 'close', 'error', 'frameError', 'ready', 'timeout', 'trailers', 'wantTrailers'].forEach((eventName) => {
-    stream.on(eventName, () => console.log(`stream (${stream.id}) on: ${eventName}`));
-  });
-});
+// server.on('stream', (stream) => {
+//   ['aborted', 'close', 'error', 'frameError', 'ready', 'timeout', 'trailers'/* , 'wantTrailers' */].forEach((eventName) => {
+//     stream.on(eventName, () => console.log(`stream (${stream.id}) on: ${eventName}`));
+//   });
+// });
+
+const HTTP2_HEADER_STATUS = require("node:http2").constants;
 
 // the 'stream' callback is called when a new
 // stream is created. Or in other words, every time a
@@ -77,17 +79,26 @@ server.on('stream', (stream, headers, flags, rawHeaders) => {
   console.log("on: stream", /* stream, headers, flags, rawHeaders */);
   // we can use the `respond` method to send
   // any headers. Here, we send the status pseudo header
+  stream.on('wantTrailers', () => {
+    console.log("on: wantTrailers", stream.sentTrailers);
+    stream.sendTrailers({
+      'server-timing': 'miss, db;dur=53, app;dur=47.2, cache;desc="Cache Read";dur=23.2'
+    });
+    console.log("on: wantTrailers", stream.sentTrailers);
+  });
   stream.respond({
-    ':status': 200,
+    HTTP2_HEADER_STATUS: 200,
     'content-type': 'text/html',
-  })
+    'Trailer': 'Server-Timing',
+    'TE': 'trailers',
+  }, { waitForTrailers: true })
   if (headers[':path'] === '/foo') {
     stream.write("<!doctype html><head><title>two</title></head><body>Blah blah blah<br><br>\n","utf8", () => {
       stream.write("<br>write2<br><a href=\"/\">link to home</a>\n");
       setTimeout(() => {
-        stream.end("My first server two!!</body></html>\n");
-      }, 2500
-      )
+        stream.write("My first server two!!</body></html>\n");
+        stream.end('blah')
+      }, 500);
     });
     return
   }
@@ -95,7 +106,7 @@ server.on('stream', (stream, headers, flags, rawHeaders) => {
     stream.write("<br>write2<br><a href=\"/foo\">link to foo</a>\n");
     setTimeout(() => {
       stream.end("My first server!</body></html>\n");
-    }, 2500
+    }, 3000
     )
   });
 
