@@ -74,18 +74,9 @@ const util = require('util');
 
 async function* $html (...children) {
   yield '<!doctype html><html>\n';
-  yield* children
-  // for (let child of children) {
-  //   yield* child
-  //   // console.log(child)
-  //   // for await (const chunk of child) {
-  //   //   console.log('chunk', chunk);
-  //   //   yield chunk
-  //   // }
-  //   // const data = await child;
-  //   // console.log('child', data);
-  //   // yield data
-  // }
+  for (let child of children) {
+    yield* child
+  }
   yield "</html>\n"
 }
 
@@ -96,8 +87,8 @@ async function* $title (title) {
 async function fetchData() {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      reject("hi");
-      // resolve("\nthis is some fetched data\n")
+      // reject("hi");
+      resolve("\nthis is some fetched data\n")
     }, 1000);
   });
 }
@@ -124,7 +115,7 @@ server.on('stream', (stream, headers, flags, rawHeaders) => {
     'content-type': 'text/html',
     'server-timing': 'miss, db;dur=53, app;dur=47.234, cache;desc="Cache Read";dur=23.2'
   })
-  if (headers[':path'] === '/foo') {
+  // if (headers[':path'] === '/foo') {
     // TODO: Switch to this maybe?
     // https://github.com/koajs/examples/blob/master/stream-view/view.js
     // https://nodejs.org/api/stream.html#implementing-a-readable-stream
@@ -155,12 +146,12 @@ server.on('stream', (stream, headers, flags, rawHeaders) => {
     //   }, 500);
     // });
     return
-  }
-  stream.write("<!doctype html><head><title>hi</title></head><body><header>Blah blah blah<br><br>\n","utf8");
-  stream.write("<br>write2<br><a href=\"/foo\">link to foo</a></header>\n");
-  setTimeout(() => {
-    stream.end("My first server!</body></html>\n");
-  }, 3000);
+  // }
+  // stream.write("<!doctype html><head><title>hi</title></head><body><header>Blah blah blah<br><br>\n","utf8");
+  // stream.write("<br>write2<br><a href=\"/foo\">link to foo</a></header>\n");
+  // setTimeout(() => {
+  //   stream.end("My first server!</body></html>\n");
+  // }, 3000);
 
   // // response streams are also stream objects, so we can
   // // use `write` to send data, and `end` once we're done
