@@ -70,6 +70,63 @@ server.on('unknownProtocol', (socket) => console.log('on: unknownProtocol'));
 //   });
 // });
 
+const util = require('util');
+
+function $html(...children) {
+  return async (stream) => {
+    const write = util.promisify(stream.write.bind(stream))
+    await write('<!doctype html><html>');
+    for (let child of children) {
+      await child(stream);
+    }
+    await write("</html>");
+  }
+}
+
+function $head(...children) {
+  return async (stream) => {
+    const write = util.promisify(stream.write.bind(stream))
+    await write('<head>');
+    for (let child of children) {
+      await child(stream);
+    }
+    await write('</head>');
+  }
+}
+
+function $title(title) {
+  return async (stream) => {
+    const write = util.promisify(stream.write.bind(stream))
+    await write(`<title>${title}</title>`);
+  }
+}
+
+function $body(...children) {
+  return async (stream) => {
+    const write = util.promisify(stream.write.bind(stream))
+    await write('<body>');
+    for (let child of children) {
+      await child(stream);
+    }
+    await write('</body>');
+  }
+}
+
+function fetchData() {
+  return new Promise(resolve => {
+    resolve("this is some fetched data")
+  }, 1000);
+}
+
+function $content() {
+  return async (stream) => {
+    const write = util.promisify(stream.write.bind(stream))
+    await write("this is some text before setTimeout");
+    const data = await fetchData();
+    await write(data);
+  }
+}
+
 const HTTP2_HEADER_STATUS = require("node:http2").constants;
 
 // the 'stream' callback is called when a new
@@ -82,16 +139,24 @@ server.on('stream', (stream, headers, flags, rawHeaders) => {
   stream.respond({
     HTTP2_HEADER_STATUS: 200,
     'content-type': 'text/html',
-      'server-timing': 'miss, db;dur=53, app;dur=47.234, cache;desc="Cache Read";dur=23.2'
+    'server-timing': 'miss, db;dur=53, app;dur=47.234, cache;desc="Cache Read";dur=23.2'
   })
   if (headers[':path'] === '/foo') {
-    stream.write("<!doctype html><head><title>two</title></head><body>Blah blah blah<br><br>\n","utf8", () => {
-      stream.write("<br>write2<br><a href=\"/\">link to home</a>\n");
-      setTimeout(() => {
-        stream.write("My first server two!!</body></html>\n");
-        stream.end()
-      }, 500);
-    });
+    $html(
+      $head(
+        $title("this is the title"),
+      ),
+      $body(
+        $content()
+      )
+    )(stream).then(() => stream.end())
+    // stream.write("<!doctype html><head><title>two</title></head><body>Blah blah blah<br><br>\n","utf8", () => {
+    //   stream.write("<br>write2<br><a href=\"/\">link to home</a>\n");
+    //   setTimeout(() => {
+    //     stream.write("My first server two!!</body></html>\n");
+    //     stream.end()
+    //   }, 500);
+    // });
     return
   }
   stream.write("<!doctype html><head><title>hi</title></head><body><header>Blah blah blah<br><br>\n","utf8");
