@@ -71,55 +71,38 @@ server.on('unknownProtocol', (socket) => console.log('on: unknownProtocol'));
 // });
 
 const util = require('util');
-
-async function* elementWithChildren(name, attributes, ...children) {
-  yield `<${name}`
-  if (attributes) {
-    yield ` ${
-      Object.entries(attributes)
-        .map(([key, value]) => `${key}="${value}"`)
-        .join(" ")
-    }`
-  }
-  yield `>`
-  for (const child of children) {
-    yield* child
-  }
-  yield `</${name}>`
-}
-
-async function* $html (...children) {
-  yield `<!doctype html>\n`;
-  yield* elementWithChildren("html", {lang: 'en'}, ...children)
-  // yield '<!doctype html><html>\n';
-  // for (let child of children) {
-  //   yield* child
-  // }
-  // yield "</html>\n"
-}
-
-async function* $title (title) {
-  yield `\n<title>\n${title}</title>\n`;
-}
+// const fs = require('fs');
 
 async function fetchData() {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      reject("hi");
-      // resolve("\nthis is some fetched data\n")
+      // reject(new Error("this is an error"));
+      resolve("this is some fetched data")
     }, 1000);
   });
 }
 
 async function* $content() {
-  yield "\nthis is some text before setTimeout\n"
-  const data = await fetchData();
-  yield data
+  yield `<!doctype html>\n<html lang="en">\n<body>\n`
+  yield* fs.createReadStream("./test-file.html");
+  yield await fetchData();
+  yield `\n</body>\n</html>\n`;
+}
+
+async function* catchErrors(content) {
+  // yield* content
+  try {
+    yield* content
+  } catch(e) {
+    console.error(e)
+    // throw e
+  }
 }
 
 const {HTTP2_HEADER_STATUS} = require("node:http2").constants;
 
 const { pipeline } = require('node:stream/promises');
+const { Readable } = require('node:stream');
 
 // the 'stream' callback is called when a new
 // stream is created. Or in other words, every time a
@@ -144,18 +127,8 @@ server.on('stream', (stream, headers, flags, rawHeaders) => {
     // https://www.npmjs.com/package/marko
     // https://github.com/popeindustries/lit-html-server
     // ⭐️ https://github.com/popeindustries/lit/blob/main/packages/lit-html-server/src/internal/node-stream-template-renderer.js#L17
-    pipeline(
-      $html(
-        // $head(
-          $title("this is the title"),
-        $content(),
-        // ),
-        // $body(
-        //   $content()
-        // )
-      ),
-      stream,
-    ).then(() => { /* stream.end() */ }).catch(e => console.error("GERR", e))
+  Readable.from(catchErrors($content())).pipe(stream)
+    // .then(() => { /* stream.end() */ }).catch(e => console.error("GERR", e))
     // stream.write("<!doctype html><head><title>two</title></head><body>Blah blah blah<br><br>\n","utf8", () => {
     //   stream.write("<br>write2<br><a href=\"/\">link to home</a>\n");
     //   setTimeout(() => {
