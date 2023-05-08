@@ -131,6 +131,7 @@ server.on('stream', (stream, headers, flags, rawHeaders) => {
     // https://paul.kinlan.me/streaming-templates-in-node-and-the-browser/
     // https://www.npmjs.com/package/stream-template
     // https://www.npmjs.com/package/marko
+    // https://github.com/popeindustries/lit-html-server
     pipeline(
       $html(
         // $head(
