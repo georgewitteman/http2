@@ -105,8 +105,8 @@ async function* $title (title) {
 async function fetchData() {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      // reject("hi");
-      resolve("\nthis is some fetched data\n")
+      reject("hi");
+      // resolve("\nthis is some fetched data\n")
     }, 1000);
   });
 }
@@ -155,7 +155,7 @@ server.on('stream', (stream, headers, flags, rawHeaders) => {
         // )
       ),
       stream,
-    ).then(() => stream.end()) // .catch(e => {stream.end(e)})
+    ).then(() => { /* stream.end() */ }).catch(e => console.error("GERR", e))
     // stream.write("<!doctype html><head><title>two</title></head><body>Blah blah blah<br><br>\n","utf8", () => {
     //   stream.write("<br>write2<br><a href=\"/\">link to home</a>\n");
     //   setTimeout(() => {
