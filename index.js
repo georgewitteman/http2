@@ -72,12 +72,30 @@ server.on('unknownProtocol', (socket) => console.log('on: unknownProtocol'));
 
 const util = require('util');
 
-async function* $html (...children) {
-  yield '<!doctype html><html>\n';
-  for (let child of children) {
+async function* elementWithChildren(name, attributes, ...children) {
+  yield `<${name}`
+  if (attributes) {
+    yield ` ${
+      Object.entries(attributes)
+        .map(([key, value]) => `${key}="${value}"`)
+        .join(" ")
+    }`
+  }
+  yield `>`
+  for (const child of children) {
     yield* child
   }
-  yield "</html>\n"
+  yield `</${name}>`
+}
+
+async function* $html (...children) {
+  yield `<!doctype html>\n`;
+  yield* elementWithChildren("html", {lang: 'en'}, ...children)
+  // yield '<!doctype html><html>\n';
+  // for (let child of children) {
+  //   yield* child
+  // }
+  // yield "</html>\n"
 }
 
 async function* $title (title) {
