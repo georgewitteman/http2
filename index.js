@@ -123,6 +123,14 @@ server.on('stream', (stream, headers, flags, rawHeaders) => {
     'server-timing': 'miss, db;dur=53, app;dur=47.234, cache;desc="Cache Read";dur=23.2'
   })
   if (headers[':path'] === '/foo') {
+    // TODO: Switch to this maybe?
+    // https://github.com/koajs/examples/blob/master/stream-view/view.js
+    // https://nodejs.org/api/stream.html#implementing-a-readable-stream
+    // https://www.npmjs.com/package/flora-tmpl
+    // https://www.npmjs.com/package/whatwg-flora-tmpl?activeTab=code
+    // https://paul.kinlan.me/streaming-templates-in-node-and-the-browser/
+    // https://www.npmjs.com/package/stream-template
+    // https://www.npmjs.com/package/marko
     pipeline(
       $html(
         // $head(
