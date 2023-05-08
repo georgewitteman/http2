@@ -94,6 +94,8 @@ async function* catchErrors(content) {
   try {
     yield* content
   } catch(e) {
+    // TODO: do this instead
+    // https://github.com/reactwg/react-18/discussions/122
     console.error(e)
     // throw e
   }
