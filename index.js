@@ -72,62 +72,58 @@ server.on('unknownProtocol', (socket) => console.log('on: unknownProtocol'));
 
 const util = require('util');
 
-function $html(...children) {
-  return async (stream) => {
-    const write = util.promisify(stream.write.bind(stream))
-    await write('<!doctype html><html>');
-    for (let child of children) {
-      await child(stream);
+async function* $html (...children) {
+  yield '<!doctype html><html>\n';
+  for (let child of children) {
+    console.log(child)
+    for await (const chunk of child) {
+      console.log('chunk', chunk);
+      yield chunk
     }
-    await write("</html>");
+    // const data = await child;
+    // console.log('child', data);
+    // yield data
   }
+  yield "</html>\n"
 }
 
-function $head(...children) {
-  return async (stream) => {
-    const write = util.promisify(stream.write.bind(stream))
-    await write('<head>');
-    for (let child of children) {
-      await child(stream);
-    }
-    await write('</head>');
+async function* $head (...children) {
+  yield '<head>';
+  for (let child of children) {
+    yield await child
   }
+  yield '</head>';
 }
 
-function $title(title) {
-  return async (stream) => {
-    const write = util.promisify(stream.write.bind(stream))
-    await write(`<title>${title}</title>`);
-  }
+async function* $title (title) {
+  yield `<title>\n${title}</title>\n`;
 }
 
-function $body(...children) {
-  return async (stream) => {
-    const write = util.promisify(stream.write.bind(stream))
-    await write('<body>');
-    for (let child of children) {
-      await child(stream);
-    }
-    await write('</body>');
+async function* $body(...children) {
+  yield '<body>';
+  for (let child of children) {
+    yield await child;
   }
+  yield '</body>';
 }
 
-function fetchData() {
+async function fetchData() {
   return new Promise(resolve => {
-    resolve("this is some fetched data")
-  }, 1000);
+    setTimeout(() => {
+      resolve("\nthis is some fetched data\n")
+    }, 1000);
+  });
 }
 
-function $content() {
-  return async (stream) => {
-    const write = util.promisify(stream.write.bind(stream))
-    await write("this is some text before setTimeout");
-    const data = await fetchData();
-    await write(data);
-  }
+async function* $content() {
+  yield "this is some text before setTimeout"
+  const data = await fetchData();
+  yield data
 }
 
 const HTTP2_HEADER_STATUS = require("node:http2").constants;
+
+const { pipeline } = require('node:stream/promises');
 
 // the 'stream' callback is called when a new
 // stream is created. Or in other words, every time a
@@ -142,14 +138,18 @@ server.on('stream', (stream, headers, flags, rawHeaders) => {
     'server-timing': 'miss, db;dur=53, app;dur=47.234, cache;desc="Cache Read";dur=23.2'
   })
   if (headers[':path'] === '/foo') {
-    $html(
-      $head(
-        $title("this is the title"),
+    pipeline(
+      $html(
+        // $head(
+          $title("this is the title"),
+        $content(),
+        // ),
+        // $body(
+        //   $content()
+        // )
       ),
-      $body(
-        $content()
-      )
-    )(stream).then(() => stream.end())
+      stream,
+    ).then(() => stream.end())
     // stream.write("<!doctype html><head><title>two</title></head><body>Blah blah blah<br><br>\n","utf8", () => {
     //   stream.write("<br>write2<br><a href=\"/\">link to home</a>\n");
     //   setTimeout(() => {
