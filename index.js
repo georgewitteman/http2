@@ -87,41 +87,26 @@ async function* $html (...children) {
   yield "</html>\n"
 }
 
-async function* $head (...children) {
-  yield '<head>';
-  for (let child of children) {
-    yield await child
-  }
-  yield '</head>';
-}
-
 async function* $title (title) {
-  yield `<title>\n${title}</title>\n`;
-}
-
-async function* $body(...children) {
-  yield '<body>';
-  for (let child of children) {
-    yield await child;
-  }
-  yield '</body>';
+  yield `\n<title>\n${title}</title>\n`;
 }
 
 async function fetchData() {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     setTimeout(() => {
-      resolve("\nthis is some fetched data\n")
+      reject("hi");
+      // resolve("\nthis is some fetched data\n")
     }, 1000);
   });
 }
 
 async function* $content() {
-  yield "this is some text before setTimeout"
+  yield "\nthis is some text before setTimeout\n"
   const data = await fetchData();
   yield data
 }
 
-const HTTP2_HEADER_STATUS = require("node:http2").constants;
+const {HTTP2_HEADER_STATUS} = require("node:http2").constants;
 
 const { pipeline } = require('node:stream/promises');
 
@@ -133,7 +118,7 @@ server.on('stream', (stream, headers, flags, rawHeaders) => {
   // we can use the `respond` method to send
   // any headers. Here, we send the status pseudo header
   stream.respond({
-    HTTP2_HEADER_STATUS: 200,
+    [HTTP2_HEADER_STATUS]: 200,
     'content-type': 'text/html',
     'server-timing': 'miss, db;dur=53, app;dur=47.234, cache;desc="Cache Read";dur=23.2'
   })
@@ -149,7 +134,7 @@ server.on('stream', (stream, headers, flags, rawHeaders) => {
         // )
       ),
       stream,
-    ).then(() => stream.end())
+    ).then(() => stream.end()) // .catch(e => {stream.end(e)})
     // stream.write("<!doctype html><head><title>two</title></head><body>Blah blah blah<br><br>\n","utf8", () => {
     //   stream.write("<br>write2<br><a href=\"/\">link to home</a>\n");
     //   setTimeout(() => {
