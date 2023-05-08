@@ -74,16 +74,18 @@ const util = require('util');
 
 async function* $html (...children) {
   yield '<!doctype html><html>\n';
-  for (let child of children) {
-    console.log(child)
-    for await (const chunk of child) {
-      console.log('chunk', chunk);
-      yield chunk
-    }
-    // const data = await child;
-    // console.log('child', data);
-    // yield data
-  }
+  yield* children
+  // for (let child of children) {
+  //   yield* child
+  //   // console.log(child)
+  //   // for await (const chunk of child) {
+  //   //   console.log('chunk', chunk);
+  //   //   yield chunk
+  //   // }
+  //   // const data = await child;
+  //   // console.log('child', data);
+  //   // yield data
+  // }
   yield "</html>\n"
 }
 
