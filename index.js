@@ -132,6 +132,7 @@ server.on('stream', (stream, headers, flags, rawHeaders) => {
     // https://www.npmjs.com/package/stream-template
     // https://www.npmjs.com/package/marko
     // https://github.com/popeindustries/lit-html-server
+    // ⭐️ https://github.com/popeindustries/lit/blob/main/packages/lit-html-server/src/internal/node-stream-template-renderer.js#L17
     pipeline(
       $html(
         // $head(
